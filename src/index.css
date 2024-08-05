@@ -1,0 +1,28 @@
+body {
+  margin: 0;
+  font-family: 'Cedarville Cursive';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: grey;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+header {
+  font-size: 5rem;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.card-hover:hover {
+  background-color: gray; /* Change this to your desired hover color */
+  outline: none;
+}
+
+.btn.card-hover:hover {
+  background-color: blue; /* Change this to your desired hover color */
+}
+
