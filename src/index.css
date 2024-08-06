@@ -17,12 +17,4 @@ header {
   justify-content: center;
   align-items: center;
 }
-.card-hover:hover {
-  background-color: gray; /* Change this to your desired hover color */
-  outline: none;
-}
-
-.btn.card-hover:hover {
-  background-color: blue; /* Change this to your desired hover color */
-}
 

@@ -58,6 +58,7 @@ function CharacterCard({ props, onClick }) {
         )}
         <Card.Body>
           <Card.Title>{props.name}</Card.Title>
+         {species&& <Card.Text> Species:{" "+species}</Card.Text>}
           {error && error.includes('species') && <Alert variant="warning">Failed to load species</Alert>}
         </Card.Body>
       </Card>
