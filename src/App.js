@@ -83,7 +83,7 @@ function App() {
               </Col>
             ))}
           </Row>
-          <Pagination setResponse={setData} setError={setFetchError} count={data.count} />
+          <Pagination setResponse={setData} setError={setFetchError} count={data.count} search={searchQuery} />
         </Container>
       )}
       {activeCharacter && (
