@@ -1,42 +1,31 @@
-import axios from 'axios';
-import { useState } from 'react';
+import { useMemo } from 'react';
 import Pagination from 'react-bootstrap/Pagination';
+const PaginationBasic = ({ totalPages,setActivePage,activePage,next,prev,...props }) => {
 
-const PaginationBasic = ({ setResponse, setError, count,search }) => {
-  const [activePage, setActivePage] = useState(1);
-  const totalPages = Math.ceil(count / 10);
-
-  const handlePageChange = async (page) => {
-    try {
-      const response = await axios.get(`https://swapi.dev/api/people/?search=${search}&page=${page}`);
-      setResponse(response.data);
-      setError(null); // Clear any previous errors
-    } catch (error) {
-      setError('Failed to fetch data. Please try again later.');
-      setResponse(null); // Clear the response on error
-    }
-  };
-
-  const paginationItems = Array.from({ length: totalPages }, (_, index) => {
-    const pageNumber = index + 1;
-    return (
-      <Pagination.Item
-        key={pageNumber}
-        active={activePage === pageNumber}
-        onClick={() => {
-          handlePageChange(pageNumber);
-          setActivePage(pageNumber);
-        }}
-      >
-        {pageNumber}
-      </Pagination.Item>
-    );
-  });
+  const paginationItems = useMemo(() => {
+    return Array.from({ length: totalPages }, (_, index) => {
+      const pageNumber = index + 1;
+      return (
+        <Pagination.Item
+          key={pageNumber}
+          active={activePage === pageNumber}
+          onClick={() => {
+            window.scrollTo({top:0,behavior:'smooth'})
+            setActivePage(pageNumber)}}
+        >
+          {pageNumber}
+        </Pagination.Item>
+      );
+    });
+  }, [totalPages, activePage,setActivePage]);
 
   return (
     <div>
-      <Pagination size="sm">
+      <Pagination size="sm" {...props}>
+      <Pagination.Prev disabled={activePage===1} onClick={prev} />
+        
         {paginationItems}
+        <Pagination.Next disabled={activePage===totalPages} onClick={next}/>
       </Pagination>
     </div>
   );
