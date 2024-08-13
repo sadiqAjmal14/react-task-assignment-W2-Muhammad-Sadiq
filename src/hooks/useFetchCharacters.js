@@ -1,46 +1,65 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import axios from "axios";
 
-const useFetchCharacters = (searchQuery) => {
-  const [data, setData] = useState(null);
-  const [fetchError, setFetchError] = useState(null);
-  const [activePage, setActivePage] = useState(JSON.parse(localStorage.getItem('currentPage'))||1);
-  const [isLoading, setIsLoading] = useState(false);
-  const previousSearchQuery = useRef(searchQuery);
+const useFetchCharacters = (searchTerm, filters) => {
+  const [characters, setCharacters] = useState(null);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(JSON.parse(localStorage.getItem('currentPage')) || 1);
+  const [loading, setLoading] = useState(false);
+
+  const prevSearchTerm = useRef(searchTerm);
   const debounceTimer = useRef(null);
+  const prevFilters = useRef(filters);
+  const prevCharacters = useRef(characters);
 
-  const debouncedFetchCharacters = useCallback(
-    (query, page = 1) => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-      }
-
-      debounceTimer.current = setTimeout(async () => {
-        setIsLoading(true);
-        try {
+  const fetchCharacters = useCallback(
+    async (query, page = 1, filterUrls = null) => {
+      setLoading(true);
+      try {
+        if (!filterUrls) {
           const url = `https://swapi.dev/api/people?search=${query}&page=${page}`;
           const response = await axios.get(url);
-          setData(response.data);
-          setFetchError(null);
-        } catch (error) {
-          setFetchError("Failed to fetch data. Please try again later.");
-          setData(null);
-        } finally {
-          setIsLoading(false);
+          prevCharacters.current = response.data;
+          setCharacters(response.data);
+        } else {
+          if (filterUrls !== prevFilters.current) {
+            const responses = await Promise.all(filterUrls.map(url => axios.get(url)));
+            let filteredCharacters = responses.map(response => response.data);
+
+            filteredCharacters = filteredCharacters.filter((character) => 
+              character.name.toLowerCase().includes(query.toLowerCase())
+            );
+
+            prevCharacters.current = filteredCharacters;
+            setCharacters({ count: 0, results: filteredCharacters });
+          } else {
+            setCharacters({ count: 0, results: prevCharacters.current?.filter((character) =>
+              character.name.toLowerCase().includes(query.toLowerCase())
+            )});
+          }
+          prevFilters.current = filterUrls;
         }
-      }, 500);
+        setError(null);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to fetch data. Please try again later.");
+        prevCharacters.current = null;
+        setCharacters(null);
+      } finally {
+        setLoading(false);
+      }
     },
     []
   );
 
   useEffect(() => {
-    if (searchQuery !== previousSearchQuery.current) {
-      setActivePage(1);
-      localStorage.setItem('currentPage',JSON.stringify(1))
-      debouncedFetchCharacters(searchQuery, 1);
-      previousSearchQuery.current = searchQuery;
+    if (searchTerm !== prevSearchTerm.current) {
+      setCurrentPage(1);
+      localStorage.setItem('currentPage', JSON.stringify(1));
+      debounceTimer.current=setTimeout(()=>{fetchCharacters(searchTerm, 1, filters)},500);
+      prevSearchTerm.current = searchTerm;
     } else {
-      debouncedFetchCharacters(searchQuery, activePage);
+      fetchCharacters(searchTerm, currentPage, filters);
     }
 
     return () => {
@@ -48,28 +67,24 @@ const useFetchCharacters = (searchQuery) => {
         clearTimeout(debounceTimer.current);
       }
     };
-  }, [searchQuery, activePage, debouncedFetchCharacters]);
+  }, [searchTerm, currentPage, fetchCharacters, filters]);
 
   const totalPages = useMemo(() => {
-    return data ? Math.ceil(data.count / 10) : 0; // Assuming 10 results per page
-  }, [data]);
+    return !filters && characters ? Math.ceil(characters.count / 10) : 0;
+  }, [characters, filters]);
 
   return { 
-    data: data ? data.results : null, 
-    fetchError,
-    isLoading,
+    characters: characters ? characters.results : null, 
+    error,
+    loading,
     totalPages, 
-    currentPage: activePage,
-    setCurrentPage: (page)=>{
-      setActivePage(page);
-      localStorage.setItem('currentPage',JSON.stringify(page));
+    currentPage,
+    setPage: (page) => {
+      setCurrentPage(page);
+      localStorage.setItem('currentPage', JSON.stringify(page));
     },
-    next:()=>{
-      setActivePage(prev=>prev+1)
-    },
-    prev:()=>{
-      setActivePage(prev=>prev-1)
-    }
+    nextPage: () => setCurrentPage(prev => prev + 1),
+    prevPage: () => setCurrentPage(prev => prev - 1),
   };
 };
 

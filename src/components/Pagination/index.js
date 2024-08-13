@@ -20,14 +20,14 @@ const PaginationBasic = ({ totalPages,setActivePage,activePage,next,prev,...prop
   }, [totalPages, activePage,setActivePage]);
 
   return (
-    <div>
+    (totalPages!==0)?<div>
       <Pagination size="sm" {...props}>
       <Pagination.Prev disabled={activePage===1} onClick={prev} />
         
         {paginationItems}
         <Pagination.Next disabled={activePage===totalPages} onClick={next}/>
       </Pagination>
-    </div>
+    </div>:<></>
   );
 };
 

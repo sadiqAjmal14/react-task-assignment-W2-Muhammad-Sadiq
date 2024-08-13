@@ -1,0 +1,37 @@
+/* FilterOptions.css */
+.dropdown-menu-pagination {
+    max-height: 300px; /* Adjust height as needed */
+    overflow-y: auto;
+    width: 100%; /* Make the dropdown take the full width of the container */
+}
+
+@media (max-width: 576px) {
+    .dropdown-menu-pagination {
+        max-height: 200px; /* Reduce height for smaller screens */
+    }
+
+    .pagination-controls {
+        display: flex;
+        justify-content: space-between;
+        padding: 0 15px;
+    }
+
+    .pagination-controls button {
+        flex: 1;
+        margin: 0 5px;
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+}
+
+@media (min-width: 576px) {
+    .pagination-controls {
+        display: flex;
+        justify-content: flex-end;
+        padding: 0 15px;
+    }
+
+    .pagination-controls button {
+        margin-left: 10px;
+    }
+}

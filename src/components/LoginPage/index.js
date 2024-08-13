@@ -15,13 +15,12 @@ const fetchLoginInfo= async () => {
     const response = await axios.post('https://dummyjson.com/auth/login', {
       username: emailRef.current.value,
       password: passwordRef.current.value,
-      expiresInMins: 1
+      expiresInMins: 30
     }, {
       headers: {
         'Content-Type': 'application/json'
       }
     });
-    console.log("Request");
     setToken(response.data.token);
     setLoginPending(false);
     localStorage.setItem('token',JSON.stringify(response.data.token));

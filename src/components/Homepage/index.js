@@ -1,114 +1,96 @@
-import { Container, Row, Col, Badge, InputGroup, FormControl, Button } from 'react-bootstrap';
-import { useState, useCallback, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { Container, Row, Col, Badge } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import CharacterCard from '../Card';
-import CharModal from '../Modal';
+import CharacterGrid from '../CharacterGrid';
+import CharacterModal from '../CharacterModal';
 import useFetchCharacters from '../../hooks/useFetchCharacters';
 import Pagination from '../Pagination';
 import LoadingPage from '../LoadingPage';
 import { LoginStateContext } from '../../context/loginStateContext';
+import SearchSection from '../SearchSection';
+import HeaderSection from '../HeaderSection';
+import './styles.css';
 
-function HomePage() {
+const HomePage = () => {
     const [activeCharacter, setActiveCharacter] = useState(JSON.parse(localStorage.getItem('activeCharacter')));
     const [searchQuery, setSearchQuery] = useState(JSON.parse(localStorage.getItem('searchQuery')) || '');
-    const { data, isLoading, fetchError, totalPages, currentPage, setCurrentPage, next, prev } = useFetchCharacters(searchQuery);
-    const setSearch = (search) => {
-        setSearchQuery(search);
-        localStorage.setItem('searchQuery', JSON.stringify(search));
-    }
-    const setCharacter = (character) => {
-        setActiveCharacter(character);
-        localStorage.setItem('activeCharacter', JSON.stringify(character));
-    }
+    const [filter, setFilter] = useState(null);
+    const { characters, isLoading, fetchError, totalPages, currentPage, setCurrentPage, next, prev } = useFetchCharacters(searchQuery, filter);
     const { token, userName, setToken, setUserName } = useContext(LoginStateContext);
+    const [isRefreshed, setIsRefreshed] = useState(false);
     const navigate = useNavigate();
-
+    const handleLogout = useCallback(() => {
+        localStorage.clear();
+        setToken(null);
+        navigate('/login');
+    },[setToken,navigate])
+    
     useEffect(() => {
         const verifyToken = async () => {
-            const storedToken = token;
-            if (!storedToken) {
+            if (!token) {
                 navigate('/login');
-            } else {
-                try {
-                    const response = await axios.get('https://dummyjson.com/auth/me', {
-                        headers: {
-                            'Authorization': `Bearer ${storedToken}`
-                        }
-                    });
-                    setUserName(response.data.firstName + " " + response.data.lastName);
-                } catch (error) {
-                    console.error('Error:', error);
-                    setToken(null);
-                    localStorage.removeItem('token');
-                    navigate('/login');
-                }
+                return;
+            }
+
+            try {
+                const response = await axios.get('https://dummyjson.com/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                setUserName(`${response.data.firstName} ${response.data.lastName}`);
+            } catch {
+                handleLogout();
             }
         };
 
         verifyToken();
-        const intervalId = setInterval(verifyToken, 600000);
+        const intervalId = setInterval(verifyToken, 300000);
         return () => clearInterval(intervalId);
-    }, [navigate, setToken, setUserName, token]);
+    }, [navigate, token, setUserName,handleLogout]);
 
-    const handleSearchInputChange = useCallback((e) => {
-        setSearch(e.target.value);
-    }, []);
+    const handleSearchInputChange = useCallback((e) => setSearchQuery(e.target.value), []);
+    const handleCharacterSelect = useCallback((index) => setActiveCharacter(characters[index]), [characters]);
 
-    const handleCharacterSelect = useCallback((index) => {
-        setCharacter(data[index]);
-    }, [data]);
-
-    const handleLogout = () => {
-        localStorage.clear();
-        setToken(null);
-        navigate('/login');
+    const handleRefresh = () => {
+        setIsRefreshed(true);
+        setActiveCharacter(null);
+        setSearchQuery('');
+        setFilter(null);
+        setCurrentPage(1);
+        localStorage.removeItem('activeCharacter');
+        localStorage.removeItem('searchQuery');
+        setIsRefreshed(false);
     };
 
     return (
         <Container fluid className="p-3">
-            <Row className="justify-content-between mb-4">
-                <Col xs="auto">
-                    {userName && <h2>Welcome, {userName}</h2>}
-                </Col>
-                <Col xs="auto">
-                </Col>
-                <Col xs="auto">
-                    <Button variant="outline-danger" onClick={handleLogout}>Logout</Button>
-                </Col>
-            </Row>
-            <Row className="justify-content-center mb-4">
-                <Col xs={12} md={8} lg={6}>
-                    <InputGroup>
-                        <FormControl
-                            placeholder="Search for a character"
-                            onChange={handleSearchInputChange}
-                            className="shadow-sm"
-                        />
-                    </InputGroup>
-                </Col>
-            </Row>
+            <HeaderSection 
+                userName={userName} 
+                handleLogout={handleLogout} 
+                handleRefresh={handleRefresh} 
+                isRefreshed={isRefreshed} 
+                filter={filter}
+                setFilter={setFilter}
+            />
+            <SearchSection 
+                searchQuery={searchQuery} 
+                handleSearchInputChange={handleSearchInputChange} 
+            />
             {isLoading && <LoadingPage />}
-            {!isLoading && fetchError && <p className="text-danger">{fetchError}</p>}
-            {!isLoading && data && !fetchError && (
+            {fetchError && <p className="text-danger">{fetchError}</p>}
+            {!isLoading && characters && (
                 <>
-                    {searchQuery && totalPages === 0 && (
+                    {searchQuery && characters.length === 0 && (
                         <Badge bg="danger" className="mb-3">Please enter a valid character name</Badge>
                     )}
-                    <Row xs={1} md={2} lg={4} className="g-4">
-                        {data.map((character, index) => (
-                            <Col key={character.name}>
-                                <CharacterCard
-                                    props={character}
-                                    onClick={() => handleCharacterSelect(index)}
-                                />
-                            </Col>
-                        ))}
-                    </Row>
+                    <CharacterGrid 
+                        data={characters} 
+                        handleCharacterSelect={handleCharacterSelect} 
+                    />
                 </>
             )}
             {activeCharacter && (
-                <CharModal
+                <CharacterModal
                     characterDetails={activeCharacter}
                     onHide={() => setActiveCharacter(null)}
                 />
@@ -126,6 +108,6 @@ function HomePage() {
             </Row>
         </Container>
     );
-}
+};
 
 export default HomePage;
