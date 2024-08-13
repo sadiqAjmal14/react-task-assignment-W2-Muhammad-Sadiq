@@ -16,7 +16,7 @@ const HomePage = () => {
     const [activeCharacter, setActiveCharacter] = useState(JSON.parse(localStorage.getItem('activeCharacter')));
     const [searchQuery, setSearchQuery] = useState(JSON.parse(localStorage.getItem('searchQuery')) || '');
     const [filter, setFilter] = useState(null);
-    const { characters, isLoading, fetchError, totalPages, currentPage, setCurrentPage, next, prev } = useFetchCharacters(searchQuery, filter);
+    const { characters, loading, fetchError, totalPages, currentPage, setPage, next, prev } = useFetchCharacters(searchQuery, filter);
     const { token, userName, setToken, setUserName } = useContext(LoginStateContext);
     const [isRefreshed, setIsRefreshed] = useState(false);
     const navigate = useNavigate();
@@ -56,7 +56,7 @@ const HomePage = () => {
         setActiveCharacter(null);
         setSearchQuery('');
         setFilter(null);
-        setCurrentPage(1);
+        setPage(1);
         localStorage.removeItem('activeCharacter');
         localStorage.removeItem('searchQuery');
         setIsRefreshed(false);
@@ -76,9 +76,9 @@ const HomePage = () => {
                 searchQuery={searchQuery} 
                 handleSearchInputChange={handleSearchInputChange} 
             />
-            {isLoading && <LoadingPage />}
+            {loading && <LoadingPage />}
             {fetchError && <p className="text-danger">{fetchError}</p>}
-            {!isLoading && characters && (
+            {!loading && characters && (
                 <>
                     {searchQuery && characters.length === 0 && (
                         <Badge bg="danger" className="mb-3">Please enter a valid character name</Badge>
@@ -95,12 +95,13 @@ const HomePage = () => {
                     onHide={() => setActiveCharacter(null)}
                 />
             )}
+            
             <Row className="mt-4">
                 <Col className="d-flex justify-content-end">
                     <Pagination
                         totalPages={totalPages}
                         activePage={currentPage}
-                        setActivePage={setCurrentPage}
+                        setActivePage={setPage}
                         next={next}
                         prev={prev}
                     />
